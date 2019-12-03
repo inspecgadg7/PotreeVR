@@ -17,9 +17,11 @@ export class VRControlls{
 
 		this.snLeft = this.createControllerModel();
 		this.snRight = this.createControllerModel();
-		
+					
 		this.viewer.scene.scene.add(this.snLeft.node);
 		this.viewer.scene.scene.add(this.snRight.node);
+		
+		
 
 	}
 
@@ -41,7 +43,7 @@ export class VRControlls{
 
 		return controller;
 	}
-
+	
 	createBox(){
 		const color = 0xffff00;
 
@@ -154,7 +156,7 @@ export class VRControlls{
 	}
 
 	copyPad(pad){
-		const buttons = pad.buttons.map(b => {return {pressed: b.pressed}});
+		const buttons = pad.buttons.map(b => {return {touched: b.touched,pressed: b.pressed}});
 
 		const pose = {
 			position: new Float32Array(pad.pose.position),
@@ -175,7 +177,7 @@ export class VRControlls{
 	}
 
 	update(){
-
+		
 		const {selection, viewer, snLeft, snRight} = this;
 		const vr = viewer.vr;
 
@@ -191,8 +193,10 @@ export class VRControlls{
 
 		const pointclouds = viewer.scene.pointclouds;
 
+		
 		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
-
+				
+		
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 		
 		if(this.previousPads.length !== gamepads.length){
@@ -201,16 +205,15 @@ export class VRControlls{
 
 		const left = gamepads.find(gp => gp.hand && gp.hand === "left");
 		const right = gamepads.find(gp => gp.hand && gp.hand === "right");
-
+		
 		const triggered = gamepads.filter(gamepad => {
 			return gamepad.buttons[1].pressed;
-		});
-
+		});	
+		
 		const justTriggered = triggered.filter(gamepad => {
 			const prev = this.previousPad(gamepad);
 			const previouslyTriggered = prev.buttons[1].pressed;
 			const currentlyTriggered = gamepad.buttons[1].pressed;
-
 			return !previouslyTriggered && currentlyTriggered;
 		});
 
@@ -225,7 +228,7 @@ export class VRControlls{
 		const toScene = (position) => {
 			return new THREE.Vector3(position.x, -position.z, position.y);
 		};
-
+		
 		if(triggered.length === 0){
 			const positions = gamepads.map(pad => toScene(new THREE.Vector3(...pad.pose.position)));
 
