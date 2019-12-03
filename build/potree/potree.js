@@ -21328,7 +21328,7 @@ ENDSEC
 			this.addEventListener('drag', drag);
 			this.addEventListener('drop', drop);
 			this.addEventListener('dblclick', dblclick);
-			this.addEventListener('click', dblclick);
+			
 		}
 
 		setScene (scene) {
@@ -26162,14 +26162,6 @@ ENDSEC
 
 			this.viewer = viewer;
 
-			this.previousPads = [];
-
-			this.selection = [];
-
-			this.triggerStarts = [];
-
-			this.scaleState = null;
-
 			this.snLeft = this.createControllerModel();
 			this.snRight = this.createControllerModel();
 			
@@ -26217,10 +26209,6 @@ ENDSEC
 			return copy;
 		}
 
-		previousPad(gamepad){
-			return this.previousPads.find(c => c.index === gamepad.index);
-		}
-
 		update(){
 			
 			const {selection, viewer, snLeft, snRight} = this;
@@ -26243,7 +26231,8 @@ ENDSEC
 			if (this.a==5){
 				console.log(Array.from(navigator.getGamepads()));
 				console.log(gamepads);
-				}
+				console.log(this.viewer.scene.view.direction);
+			}
 			this.a+=1;
 			
 			const toScene = (position) => {
@@ -26256,14 +26245,15 @@ ENDSEC
 			const triggeredTP = gamepads.filter(gamepad => {
 				return gamepad.buttons[1].pressed;
 			});	
-			if (this.a==5){
-				console.log(triggeredTP);
-			}
-			if(triggeredTP.length > 0){
-				console.log(triggeredTP);
-				this.viewer.scene.view.position.x+=50*this.viewer.scene.view.direction.x;
-				this.viewer.scene.view.position.y+=50*this.viewer.scene.view.direction.y;
-				this.viewer.scene.view.position.z+=50*this.viewer.scene.view.direction.z;;
+			
+			
+			if(this.a%300==0){
+				
+				this.viewer.scene.view.position.x += 5*this.viewer.scene.view.direction.x,
+				this.viewer.scene.view.position.y += 5*this.viewer.scene.view.direction.y,
+				this.viewer.scene.view.position.z += 5*this.viewer.scene.view.direction.z;
+				
+				///this.viewer.scene.view.position.copy(this.viewer.scene.view.position.x += 5*this.viewer.scene.view.direction.x,this.viewer.scene.view.position.y += 5*this.viewer.scene.view.direction.y,this.viewer.scene.view.position.z += 5*this.viewer.scene.view.direction.z);
 			}
 
 			{ // MOVE CONTROLLER SCENE NODE

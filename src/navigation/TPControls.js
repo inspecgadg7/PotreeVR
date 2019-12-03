@@ -118,7 +118,7 @@ export class TPControls extends EventDispatcher{
 		this.addEventListener('drag', drag);
 		this.addEventListener('drop', drop);
 		this.addEventListener('dblclick', dblclick);
-		this.addEventListener('click', dblclick);
+		
 	}
 
 	setScene (scene) {
