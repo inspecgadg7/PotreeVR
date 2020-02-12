@@ -10,7 +10,11 @@ export class VRMapControls{
 		this.snRight = this.createControllerModel();
 					
 		this.viewer.scene.scene.add(this.snLeft.node);
-		this.viewer.scene.scene.add(this.snRight.node);		
+		this.viewer.scene.scene.add(this.snRight.node);	
+		
+		this.a=0;
+		this.speedXY;
+		
 	}
 
 	createControllerModel(){
@@ -119,8 +123,10 @@ export class VRMapControls{
 	copyPad(pad){
 		const buttons = pad.buttons.map(b => {return {touched: b.touched,pressed: b.pressed}});
 
+		const axes = pad.axes;
+
 		const pose = {
-			position: new Float32Array(pad.pose.position),
+			position: new Float32Array(pad.pose.position)
 		};
 
 		const copy = {
@@ -128,6 +134,7 @@ export class VRMapControls{
 			pose: pose, 
 			hand: pad.hand,
 			index: pad.index,
+			axes: pad.axes
 		};
 
 		return copy;
@@ -138,7 +145,11 @@ export class VRMapControls{
 	}
 
 	update(){
+		this.a++;
 		const {viewer, snLeft, snRight} = this;
+		
+		const pointclouds = viewer.scene.pointclouds;
+		
 		const vr = viewer.vr;
 
 		const vrActive = vr && vr.display.isPresenting;
@@ -150,12 +161,12 @@ export class VRMapControls{
 
 			return;
 		}
-
-		const pointclouds = viewer.scene.pointclouds;
-
-		
-		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
 				
+		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
+		
+		if (this.a%400==0){
+			//console.log(Array.from(navigator.getGamepads()));
+		}	
 		
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 		
@@ -165,35 +176,65 @@ export class VRMapControls{
 
 		const left = gamepads.find(gp => gp.hand && gp.hand === "left");
 		const right = gamepads.find(gp => gp.hand && gp.hand === "right");
-		
+				
 		const triggered=[];
 		const justTriggered=[];
 		const justUntriggered=[];
 		
-		
 		//Status of the trigger/Untrigger of every button at the beginning of every loop
-		for (let i=0;i<5;i++){
-			const prev = this.previousPad(gamepad);
-			
-			triggered.push(gamepads.filter((gamepad,i) => {
+		/*
+		
+		for (let i=0;i<5;i++){			
+			triggered.push(gamepads.filter(gamepad => {
 				return gamepad.buttons[i].pressed;
 			}));	
-		
-			justTriggered.push(triggered.filter((gamepad,i) => {
+			
+			justTriggered.push(triggered.filter(gamepad => {
+				const prev=this.previousPad(gamepad);
 				const previouslyTriggered=prev.buttons[i].pressed;
-				const currentlyTriggered.push(gamepad.buttons[i].pressed);
+				const currentlyTriggered=gamepad.buttons[i].pressed;
 				return !previouslyTriggered && currentlyTriggered;
 			}));
 
-			justUntriggered.push(gamepads.filter((gamepad,i) => {
+			justUntriggered.push(gamepads.filter(gamepad => {
+				prev=this.previousPad(gamepad);
 				const previouslyTriggered = prev.buttons[i].pressed;
 				const currentlyTriggered = gamepad.buttons[i].pressed;
 				return previouslyTriggered && !currentlyTriggered;
 			}));
+			
+			
 		}
+		
+		*/
 		const toScene = (position) => {
 			return new THREE.Vector3(position.x, -position.z, position.y);
 		};
+		
+		//MOVE THE VIEW
+		
+		let speedX = 0;
+		let speedY = 0;
+		let speedZ = 0;
+		let rotationY = 0;
+		let rotationZ = 0;
+		for (let gamepad of gamepads){
+			if (gamepad.hand=="right"){
+				speedX=-1*gamepad.axes[0];
+				speedY=gamepad.axes[1];
+			}
+			if (gamepad.hand="left"){
+				rotationY=-1*gamepad.axes[0];
+				rotationZ=gamepad.axes[1];
+			}
+		}
+		console.log(viewer.scene.view.direction.x);		
+		
+		for (let pointcloud of pointclouds){
+			pointcloud.position.x+=1/50*speedX;
+			pointcloud.position.y+=1/50*speedY;
+			pointcloud.position.z+=speedZ;
+		}
 		
 		{ // MOVE CONTROLLER SCENE NODE
 			if(right){
@@ -203,8 +244,7 @@ export class VRMapControls{
 			}
 			
 			if(left){
-				const {node, debug} = snRight;
-				
+				const {node, debug} = snRight;				
 				const position = toScene(new THREE.Vector3(...left.pose.position));
 				node.position.copy(position);
 			}

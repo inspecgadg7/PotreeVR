@@ -2,6 +2,8 @@ export class VRControlls{
 
 	constructor(viewer){
 
+		this.a=0;
+		
 		this.viewer = viewer;
 
 		this.previousPads = [];
@@ -178,6 +180,7 @@ export class VRControlls{
 
 	update(){
 		
+		this.a++;
 		const {selection, viewer, snLeft, snRight} = this;
 		const vr = viewer.vr;
 
@@ -196,7 +199,9 @@ export class VRControlls{
 		
 		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
 				
-		
+		if (this.a%500==0){
+			console.log(gamepads);
+		}
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 		
 		if(this.previousPads.length !== gamepads.length){
@@ -209,7 +214,7 @@ export class VRControlls{
 		const triggered = gamepads.filter(gamepad => {
 			return gamepad.buttons[1].pressed;
 		});	
-		
+			
 		const justTriggered = triggered.filter(gamepad => {
 			const prev = this.previousPad(gamepad);
 			const previouslyTriggered = prev.buttons[1].pressed;
@@ -260,7 +265,7 @@ export class VRControlls{
 		}
 
 		if(justTriggered.length > 0){
-
+			console.log(triggered);
 			const pad = justTriggered[0];
 			const position = toScene(new THREE.Vector3(...pad.pose.position));
 			const I = this.getPointcloudsAt(pointclouds, position);

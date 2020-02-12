@@ -25731,6 +25731,8 @@ ENDSEC
 
 		constructor(viewer){
 
+			this.a=0;
+			
 			this.viewer = viewer;
 
 			this.previousPads = [];
@@ -25907,6 +25909,7 @@ ENDSEC
 
 		update(){
 			
+			this.a++;
 			const {selection, viewer, snLeft, snRight} = this;
 			const vr = viewer.vr;
 
@@ -25925,7 +25928,9 @@ ENDSEC
 			
 			const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
 					
-			
+			if (this.a%500==0){
+				console.log(gamepads);
+			}
 			const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 			
 			if(this.previousPads.length !== gamepads.length){
@@ -25938,7 +25943,7 @@ ENDSEC
 			const triggered = gamepads.filter(gamepad => {
 				return gamepad.buttons[1].pressed;
 			});	
-			
+				
 			const justTriggered = triggered.filter(gamepad => {
 				const prev = this.previousPad(gamepad);
 				const previouslyTriggered = prev.buttons[1].pressed;
@@ -25989,7 +25994,7 @@ ENDSEC
 			}
 
 			if(justTriggered.length > 0){
-
+				console.log(triggered);
 				const pad = justTriggered[0];
 				const position = toScene(new THREE.Vector3(...pad.pose.position));
 				const I = this.getPointcloudsAt(pointclouds, position);
@@ -26168,7 +26173,11 @@ ENDSEC
 			this.snRight = this.createControllerModel();
 						
 			this.viewer.scene.scene.add(this.snLeft.node);
-			this.viewer.scene.scene.add(this.snRight.node);		
+			this.viewer.scene.scene.add(this.snRight.node);	
+			
+			this.a=0;
+			this.speedXY;
+			
 		}
 
 		createControllerModel(){
@@ -26277,8 +26286,10 @@ ENDSEC
 		copyPad(pad){
 			const buttons = pad.buttons.map(b => {return {touched: b.touched,pressed: b.pressed}});
 
+			const axes = pad.axes;
+
 			const pose = {
-				position: new Float32Array(pad.pose.position),
+				position: new Float32Array(pad.pose.position)
 			};
 
 			const copy = {
@@ -26286,6 +26297,7 @@ ENDSEC
 				pose: pose, 
 				hand: pad.hand,
 				index: pad.index,
+				axes: pad.axes
 			};
 
 			return copy;
@@ -26296,7 +26308,11 @@ ENDSEC
 		}
 
 		update(){
+			this.a++;
 			const {viewer, snLeft, snRight} = this;
+			
+			const pointclouds = viewer.scene.pointclouds;
+			
 			const vr = viewer.vr;
 
 			const vrActive = vr && vr.display.isPresenting;
@@ -26308,12 +26324,12 @@ ENDSEC
 
 				return;
 			}
-
-			const pointclouds = viewer.scene.pointclouds;
-
-			
-			const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
 					
+			const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
+			
+			if (this.a%400==0){
+				//console.log(Array.from(navigator.getGamepads()));
+			}	
 			
 			const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 			
@@ -26323,29 +26339,65 @@ ENDSEC
 
 			const left = gamepads.find(gp => gp.hand && gp.hand === "left");
 			const right = gamepads.find(gp => gp.hand && gp.hand === "right");
+					
+			const triggered=[];
+			const justTriggered=[];
+			const justUntriggered=[];
 			
-			const triggered = gamepads.filter(gamepad => {
-				return gamepad.buttons[1].pressed;
-			});	
+			//Status of the trigger/Untrigger of every button at the beginning of every loop
+			/*
 			
-			const justTriggered = triggered.filter(gamepad => {
-				const prev = this.previousPad(gamepad);
-				const previouslyTriggered = prev.buttons[1].pressed;
-				const currentlyTriggered = gamepad.buttons[1].pressed;
-				return !previouslyTriggered && currentlyTriggered;
-			});
+			for (let i=0;i<5;i++){			
+				triggered.push(gamepads.filter(gamepad => {
+					return gamepad.buttons[i].pressed;
+				}));	
+				
+				justTriggered.push(triggered.filter(gamepad => {
+					const prev=this.previousPad(gamepad);
+					const previouslyTriggered=prev.buttons[i].pressed;
+					const currentlyTriggered=gamepad.buttons[i].pressed;
+					return !previouslyTriggered && currentlyTriggered;
+				}));
 
-			const justUntriggered = gamepads.filter(gamepad => {
-				const prev = this.previousPad(gamepad);
-				const previouslyTriggered = prev.buttons[1].pressed;
-				const currentlyTriggered = gamepad.buttons[1].pressed;
-
-				return previouslyTriggered && !currentlyTriggered;
-			});
-
+				justUntriggered.push(gamepads.filter(gamepad => {
+					prev=this.previousPad(gamepad);
+					const previouslyTriggered = prev.buttons[i].pressed;
+					const currentlyTriggered = gamepad.buttons[i].pressed;
+					return previouslyTriggered && !currentlyTriggered;
+				}));
+				
+				
+			}
+			
+			*/
 			const toScene = (position) => {
 				return new THREE.Vector3(position.x, -position.z, position.y);
 			};
+			
+			//MOVE THE VIEW
+			
+			let speedX = 0;
+			let speedY = 0;
+			let speedZ = 0;
+			let rotationY = 0;
+			let rotationZ = 0;
+			for (let gamepad of gamepads){
+				if (gamepad.hand=="right"){
+					speedX=-1*gamepad.axes[0];
+					speedY=gamepad.axes[1];
+				}
+				if (gamepad.hand="left"){
+					rotationY=-1*gamepad.axes[0];
+					rotationZ=gamepad.axes[1];
+				}
+			}
+			console.log(viewer.scene.view.direction.x);		
+			
+			for (let pointcloud of pointclouds){
+				pointcloud.position.x+=1/50*speedX;
+				pointcloud.position.y+=1/50*speedY;
+				pointcloud.position.z+=speedZ;
+			}
 			
 			{ // MOVE CONTROLLER SCENE NODE
 				if(right){
@@ -26355,8 +26407,7 @@ ENDSEC
 				}
 				
 				if(left){
-					const {node, debug} = snRight;
-					
+					const {node, debug} = snRight;				
 					const position = toScene(new THREE.Vector3(...left.pose.position));
 					node.position.copy(position);
 				}
