@@ -43,21 +43,35 @@
 	
 	<script>
 	
+		
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 		
-		viewer.setEDLEnabled(false);
+		viewer.setEDLEnabled(true);
 		viewer.setFOV(60);
-		viewer.setPointBudget(0.3 * 1000 * 1000);
-		//viewer.setShowBoundingBox(true)
+		viewer.setPointBudget(1*1000*1000);
 		viewer.loadSettingsFromURL();
+		
+		//viewer.setDescription("Point cloud courtesy of <a target='_blank' href='https://www.sigeom.ch/'>sigeom sa</a>");
 		
 		viewer.loadGUI(() => {
 			viewer.setLanguage('en');
-			$("#menu_appearance").next().show();
 			$("#menu_tools").next().show();
+			$("#menu_clipping").next().show();
 			$("#menu_scene").next().show();
 			$("#menu_filters").next().show();
 			viewer.toggleSidebar();
+		});
+		
+		Potree.loadPointCloud("../pointclouds/lion_takanawa/cloud.js", "Lion", function(e){
+			viewer.scene.addPointCloud(e.pointcloud);
+
+			e.pointcloud.position.set(1, 0, -0.2);
+			e.pointcloud.scale.set(0.2, 0.2, 0.2);
+			
+			const material = e.pointcloud.material;
+
+			material.size = 0.4;
+			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
 		});
 		
 		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "Sorvelier", function(e){
@@ -74,6 +88,7 @@
 
 		viewer.scene.view.position.set(-1.035, -0.450, 0.686);
 		viewer.scene.view.lookAt(0.339, 0.107, 0.011);
+
 
 		{ // floor
 

@@ -26162,14 +26162,13 @@ ENDSEC
 
 			this.viewer = viewer;
 
+			this.previousPads = [];
+
 			this.snLeft = this.createControllerModel();
 			this.snRight = this.createControllerModel();
-			
+						
 			this.viewer.scene.scene.add(this.snLeft.node);
-			this.viewer.scene.scene.add(this.snRight.node);
-			this.a=1;
-			
-
+			this.viewer.scene.scene.add(this.snRight.node);		
 		}
 
 		createControllerModel(){
@@ -26191,12 +26190,95 @@ ENDSEC
 			return controller;
 		}
 		
+		debugLine(start, end, index, color){
+
+			if(typeof this.debugLines === "undefined"){
+
+				const geometry = new THREE.SphereGeometry(1, 8, 8);
+
+				this.debugLines = {
+					geometry: geometry,
+				};
+			}
+
+			const n = 100;
+
+			if(!this.debugLines[index]){
+				const geometry = this.debugLines.geometry;
+				const material = new THREE.MeshBasicMaterial({color: color});
+				const nodes = [];
+
+				for(let i = 0; i <= n; i++){
+					const u = i / n;
+
+					const node = new THREE.Mesh(geometry, material);
+
+					const position = new THREE.Vector3().addVectors(
+						start.clone().multiplyScalar(1-u),
+						end.clone().multiplyScalar(u)
+					);
+
+					node.position.copy(position);
+					node.scale.set(0.002, 0.002, 0.002);
+					this.viewer.scene.scene.add(node);
+					nodes.push(node);
+				}
+
+				const debugLine = {
+					material: material,
+					nodes: nodes,
+				};
+
+				this.debugLines[index] = debugLine;
+			}else{
+				const debugLine = this.debugLines[index];
+
+				for(let i = 0; i <= n; i++){
+					const node = debugLine.nodes[i];
+					const u = i / n;
+
+					const position = new THREE.Vector3().addVectors(
+						start.clone().multiplyScalar(1-u),
+						end.clone().multiplyScalar(u)
+					);
+
+					node.position.copy(position);
+				}
+			}
+
+
+		}
+
+		getPointcloudsAt(pointclouds, position){
+
+			const I = [];
+			for(const pointcloud of pointclouds){
+
+				const world = pointcloud.matrixWorld;
+				const worldToObject = new THREE.Matrix4().getInverse(world);
+
+				const center = position.clone();
+				const radius = 0.01;
+				//const radius = node.scale.x;
+				const sphere = new THREE.Sphere(center, radius);
+				sphere.applyMatrix4(worldToObject);
+
+				const box = pointcloud.boundingBox;
+				const intersects = box.intersectsSphere(sphere);
+
+				if(intersects){
+					I.push(pointcloud);
+				}
+			}
+
+			return I;
+		}
+
 		copyPad(pad){
-			const buttons = pad.buttons.map(b => {return {pressed: b.pressed}});
+			const buttons = pad.buttons.map(b => {return {touched: b.touched,pressed: b.pressed}});
 
 			const pose = {
 				position: new Float32Array(pad.pose.position),
-				orientation: new Float32Array(pad.pose.position),
 			};
 
 			const copy = {
@@ -26209,9 +26291,12 @@ ENDSEC
 			return copy;
 		}
 
+		previousPad(gamepad){
+			return this.previousPads.find(c => c.index === gamepad.index);
+		}
+
 		update(){
-			
-			const {selection, viewer, snLeft, snRight} = this;
+			const {viewer, snLeft, snRight} = this;
 			const vr = viewer.vr;
 
 			const vrActive = vr && vr.display.isPresenting;
@@ -26228,34 +26313,40 @@ ENDSEC
 
 			
 			const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
-			if (this.a==5){
-				console.log(Array.from(navigator.getGamepads()));
-				console.log(gamepads);
-				console.log(this.viewer.scene.view.direction);
-			}
-			this.a+=1;
+					
 			
+			const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
+			
+			if(this.previousPads.length !== gamepads.length){
+				this.previousPads = gamepads;
+			}
+
+			const left = gamepads.find(gp => gp.hand && gp.hand === "left");
+			const right = gamepads.find(gp => gp.hand && gp.hand === "right");
+			
+			const triggered = gamepads.filter(gamepad => {
+				return gamepad.buttons[1].pressed;
+			});	
+			
+			const justTriggered = triggered.filter(gamepad => {
+				const prev = this.previousPad(gamepad);
+				const previouslyTriggered = prev.buttons[1].pressed;
+				const currentlyTriggered = gamepad.buttons[1].pressed;
+				return !previouslyTriggered && currentlyTriggered;
+			});
+
+			const justUntriggered = gamepads.filter(gamepad => {
+				const prev = this.previousPad(gamepad);
+				const previouslyTriggered = prev.buttons[1].pressed;
+				const currentlyTriggered = gamepad.buttons[1].pressed;
+
+				return previouslyTriggered && !currentlyTriggered;
+			});
+
 			const toScene = (position) => {
 				return new THREE.Vector3(position.x, -position.z, position.y);
 			};
 			
-			const left = gamepads.find(gp => gp.hand && gp.hand === "left");
-			const right = gamepads.find(gp => gp.hand && gp.hand === "right");
-			
-			const triggeredTP = gamepads.filter(gamepad => {
-				return gamepad.buttons[1].pressed;
-			});	
-			
-			
-			if(this.a%300==0){
-				
-				this.viewer.scene.view.position.x += 5*this.viewer.scene.view.direction.x,
-				this.viewer.scene.view.position.y += 5*this.viewer.scene.view.direction.y,
-				this.viewer.scene.view.position.z += 5*this.viewer.scene.view.direction.z;
-				
-				///this.viewer.scene.view.position.copy(this.viewer.scene.view.position.x += 5*this.viewer.scene.view.direction.x,this.viewer.scene.view.position.y += 5*this.viewer.scene.view.direction.y,this.viewer.scene.view.position.z += 5*this.viewer.scene.view.direction.z);
-			}
-
 			{ // MOVE CONTROLLER SCENE NODE
 				if(right){
 					const {node, debug} = snLeft;
