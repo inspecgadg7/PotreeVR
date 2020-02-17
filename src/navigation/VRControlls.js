@@ -198,10 +198,11 @@ export class VRControlls{
 
 		
 		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
-				
+		/*		
 		if (this.a%500==0){
 			console.log(gamepads);
 		}
+		*/
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 		
 		if(this.previousPads.length !== gamepads.length){

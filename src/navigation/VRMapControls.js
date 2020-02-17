@@ -13,7 +13,8 @@ export class VRMapControls{
 		this.viewer.scene.scene.add(this.snRight.node);	
 		
 		this.a=0;
-		this.speedXY;
+		this.speed=20;
+		this.rotationSpeed=20;
 		
 	}
 
@@ -126,7 +127,8 @@ export class VRMapControls{
 		const axes = pad.axes;
 
 		const pose = {
-			position: new Float32Array(pad.pose.position)
+			position: new Float32Array(pad.pose.position),
+			orientation: new Float32Array(pad.pose.orientation)
 		};
 
 		const copy = {
@@ -165,7 +167,7 @@ export class VRMapControls{
 		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
 		
 		if (this.a%400==0){
-			//console.log(Array.from(navigator.getGamepads()));
+			//console.log(gamepads);
 		}	
 		
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
@@ -210,30 +212,90 @@ export class VRMapControls{
 		const toScene = (position) => {
 			return new THREE.Vector3(position.x, -position.z, position.y);
 		};
+		if (this.a%400==0){
+			
+		}
 		
 		//MOVE THE VIEW
 		
 		let speedX = 0;
 		let speedY = 0;
 		let speedZ = 0;
+		
 		let rotationY = 0;
 		let rotationZ = 0;
+		
+		let triggerA = false;
+		let triggerB = false;
+		
+		let triggerX = false;
+		let triggerY = false;
+		
 		for (let gamepad of gamepads){
 			if (gamepad.hand=="right"){
-				speedX=-1*gamepad.axes[0];
+				speedX=-1*gamepad.axes[0];                                                                  
 				speedY=gamepad.axes[1];
+				                                  
+				triggerA=gamepad.buttons[3].pressed;
+				triggerB=gamepad.buttons[4].pressed;
+				
 			}
-			if (gamepad.hand="left"){
-				rotationY=-1*gamepad.axes[0];
-				rotationZ=gamepad.axes[1];
+			else if (gamepad.hand="left"){
+				rotationY=gamepad.axes[0];
+				//rotationZ=gamepad.axes[1];
+				
+				triggerX=gamepad.buttons[3].pressed;
+				triggerY=gamepad.buttons[4].pressed;
 			}
 		}
-		console.log(viewer.scene.view.direction.x);		
+		
+		//Do Increase/Decrease moving speed if button Y/X pressed
+		
+		if (triggerX && triggerY){
+		}
+		else if (triggerX){
+			this.speed/=1.02;
+		}
+		else if (triggerY){
+			this.speed*=1.02;
+		}
+		
+		//Go Up/down if button B/A pressed
+		if (triggerA && triggerB){
+			speedZ=0;
+		}
+		else if (triggerA){
+			speedZ=1/1000*this.speed;
+		}
+		else if (triggerB){
+			speedZ=-1*1/1000*this.speed;
+		}
+		
+		//move all the pointcloud
+		
+		const orientationVR=vr.frameData.pose.orientation;
+		const positionHeadVR=vr.frameData.pose.position;
+		let angle=orientationVR[1]*Math.PI;
 		
 		for (let pointcloud of pointclouds){
-			pointcloud.position.x+=1/50*speedX;
-			pointcloud.position.y+=1/50*speedY;
-			pointcloud.position.z+=speedZ;
+			const moveSpeed=1/1000*this.speed;
+			pointcloud.position.x += moveSpeed*speedX*Math.cos(angle)-1*moveSpeed*speedY*Math.sin(angle); 
+			pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
+			pointcloud.position.z += speedZ;
+			/*
+			if (a%10==0){
+				const radius=Math.sqrt((pointcloud.position.x-positionHeadVR[0])^2+(pointcloud.position.y-positionHeadVR[1])^2);
+				const yawSpeed=1/1000*this.rotationSpeed;
+				const yawDelta=rotationY*Math.PI*yawSpeed;
+				const prevX=pointcloud.position.x+positionHeadVR[0];
+				const prevY=pointcloud.position.y+positionHeadVR[1];
+				if (yawDelta !==0){
+					pointcloud.position.x=prevX*Math.cos(yawDelta)-prevY*Math.sin(yawDelta)-positionHeadVR[0];
+					pointcloud.position.y=prevX*Math.sin(yawDelta)-prevY*Math.cos(yawDelta)-positionHeadVR[1];
+					pointcloud.rotation.z+=yawDelta;
+				}
+			}
+			*/
 		}
 		
 		{ // MOVE CONTROLLER SCENE NODE

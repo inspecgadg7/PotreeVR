@@ -65,7 +65,7 @@
 		Potree.loadPointCloud("../pointclouds/vol_total/cloud.js", "Sorvelier", function(e){
 			viewer.scene.addPointCloud(e.pointcloud);
 
-			e.pointcloud.position.set(0, -1, -2.2);
+			e.pointcloud.position.set(0, -1, -5.2);
 			e.pointcloud.scale.set(0.02, 0.02, 0.02);
 			
 			const material = e.pointcloud.material;
@@ -73,9 +73,8 @@
 			material.size = 0.4;
 			material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
 		});
-
-		viewer.scene.view.position.set(-1.035, -0.450, 0.686);
-		viewer.scene.view.lookAt(0.339, 0.107, 0.011);
+		viewer.scene.view.position.set(0,0,0);
+		viewer.scene.view.lookAt(0, 0, 0);
 
 
 		if(true){
