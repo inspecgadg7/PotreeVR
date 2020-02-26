@@ -26179,7 +26179,7 @@ ENDSEC
 			this.a=0;
 			this.speed=20;
 			this.rotationSpeed=20;
-			
+			this.prevTriggerTP=false;
 		}
 
 		createControllerModel(){
@@ -26309,6 +26309,9 @@ ENDSEC
 		previousPad(gamepad){
 			return this.previousPads.find(c => c.index === gamepad.index);
 		}
+		distance(point1,point2){
+			return Math.sqrt(point1.x^2+point2.x^2+point3.x^2);
+		}
 
 		update(){
 			this.a++;
@@ -26343,36 +26346,6 @@ ENDSEC
 			const left = gamepads.find(gp => gp.hand && gp.hand === "left");
 			const right = gamepads.find(gp => gp.hand && gp.hand === "right");
 					
-			const triggered=[];
-			const justTriggered=[];
-			const justUntriggered=[];
-			
-			//Status of the trigger/Untrigger of every button at the beginning of every loop
-			/*
-			
-			for (let i=0;i<5;i++){			
-				triggered.push(gamepads.filter(gamepad => {
-					return gamepad.buttons[i].pressed;
-				}));	
-				
-				justTriggered.push(triggered.filter(gamepad => {
-					const prev=this.previousPad(gamepad);
-					const previouslyTriggered=prev.buttons[i].pressed;
-					const currentlyTriggered=gamepad.buttons[i].pressed;
-					return !previouslyTriggered && currentlyTriggered;
-				}));
-
-				justUntriggered.push(gamepads.filter(gamepad => {
-					prev=this.previousPad(gamepad);
-					const previouslyTriggered = prev.buttons[i].pressed;
-					const currentlyTriggered = gamepad.buttons[i].pressed;
-					return previouslyTriggered && !currentlyTriggered;
-				}));
-				
-				
-			}
-			
-			*/
 			const toScene = (position) => {
 				return new THREE.Vector3(position.x, -position.z, position.y);
 			};
@@ -26395,6 +26368,11 @@ ENDSEC
 			let triggerX = false;
 			let triggerY = false;
 			
+			let justTriggeredTP = false;
+			let gamepadPos = 0;
+			
+			let justTriggeredMoveToPoint = false;
+			
 			for (let gamepad of gamepads){
 				if (gamepad.hand=="right"){
 					speedX=-1*gamepad.axes[0];                                                                  
@@ -26403,6 +26381,12 @@ ENDSEC
 					triggerA=gamepad.buttons[3].pressed;
 					triggerB=gamepad.buttons[4].pressed;
 					
+					const prev = this.previousPad(gamepad);
+					if (!prev.buttons[1].pressed && gamepad.buttons[1].pressed){
+						justTriggeredTP=true;
+						gamepadPos=gamepad.pose.position;
+					}
+					
 				}
 				else if (gamepad.hand="left"){
 					rotationY=gamepad.axes[0];
@@ -26410,6 +26394,70 @@ ENDSEC
 					
 					triggerX=gamepad.buttons[3].pressed;
 					triggerY=gamepad.buttons[4].pressed;
+					
+					const prev = this.previousPad(gamepad);
+					if (!prev.buttons[1].pressed && gamepad.buttons[1].pressed){
+						justTriggeredMoveToPoint=true;
+						gamepadPos=gamepad.pose.position;
+					}
+				}
+			}
+			
+			//Trigger a TP in the direction of the gamepad
+			
+			if (justTriggeredTP==true){
+				const positionHeadVR=vr.frameData.pose.position;
+				let dirX=positionHeadVR[0]-gamepadPos[0];
+				let dirY=positionHeadVR[1]-gamepadPos[1];
+				let dirZ=positionHeadVR[2]-gamepadPos[2];
+				const normDir=Math.sqrt(dirX^2+dirY^2+dirZ^2);
+				dirX=dirX/normDir;
+				dirY=dirY/normDir;
+				dirZ=dirZ/normDir;
+				//direction x -z y
+				if (gamepadPos.length>0){
+					for (let pointcloud of pointclouds){
+						const moveSpeed=1/10*this.speed;
+						pointcloud.position.x += moveSpeed*dirX;
+						pointcloud.position.y += moveSpeed*-1*dirZ; 
+						pointcloud.position.z += moveSpeed*dirY;
+					}
+				}
+			}
+			
+			//Instantaneous tp to a point of the pointcloud
+			
+			if (justTriggeredMoveToPoint==true){
+				const positionHeadVR=vr.frameData.pose.position;
+				let dirX=positionHeadVR[0]-gamepadPos[0];
+				let dirY=positionHeadVR[1]-gamepadPos[1];
+				let dirZ=positionHeadVR[2]-gamepadPos[2];
+				const normDir=Math.sqrt(dirX^2+dirY^2+dirZ^2);
+				dirX=dirX/normDir;
+				dirY=dirY/normDir;
+				dirZ=dirZ/normDir;
+				
+				let minDistance=Infinity;
+				let chosenPoint=0;
+				let chosenPC=0;
+				let distToPoint=0;
+				if (gamepadPos.length>0){
+					for (let pointcloud of pointclouds){
+						//const moveSpeed=1/10*this.speed;					
+						for (let point of pointcloud){
+							let distToPoint=distance(point,gamepadPos);
+							if (distToPoint<minDistance){
+								minDistance=distToPoint;
+								chosenPoint=point;
+								chosenPc=pointcloud;
+							}
+						}
+					}
+					for (let poincloud of pointclouds){
+						pointcloud.position.x=chosenPoint.x;
+						pointcloud.position.y=chosenPoint.y;
+						pointcloud.position.z=chosenPoint.z;
+					}
 				}
 			}
 			
@@ -26447,6 +26495,7 @@ ENDSEC
 				pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
 				pointcloud.position.z += speedZ;
 				
+				/*
 				if (a%10==0){
 					const radius=Math.sqrt((pointcloud.position.x-positionHeadVR[0])^2+(pointcloud.position.y-positionHeadVR[1])^2);
 					const yawSpeed=1/1000*this.rotationSpeed;
@@ -26459,6 +26508,7 @@ ENDSEC
 						pointcloud.rotation.z+=yawDelta;
 					}
 				}
+				*/
 			}
 			
 			{ // MOVE CONTROLLER SCENE NODE
