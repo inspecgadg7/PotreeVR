@@ -1,9 +1,12 @@
+import {Utils} from "../utils.js";
+
+
 export class VRMapControls{
 
 	constructor(viewer){
 
 		this.viewer = viewer;
-
+		this.domElement=this.viewer.renderer.domElement;
 		this.previousPads = [];
 
 		this.snLeft = this.createControllerModel();
@@ -148,6 +151,26 @@ export class VRMapControls{
 	distance(point1,point2){
 		return Math.sqrt(point1.x^2+point2.x^2+point3.x^2);
 	}
+	getIntersectionPointCloud(){
+		let camera = this.viewer.scene.getActiveCamera();
+		let mouse = {
+			x:this.domElement.clientWidth/2,
+			y:this.domElement.clientHeight/2
+			}
+		let I = Utils.getMousePointCloudIntersection(
+			mouse,
+			camera,
+			this.viewer,
+			this.viewer.scene.pointclouds,
+			{pickClipped: true});
+
+		if (I === null) {
+			return;
+		}
+		//console.log(I);
+		return I.point.position;
+		
+	}
 
 	update(){
 		this.a++;
@@ -209,6 +232,8 @@ export class VRMapControls{
 		
 		let justTriggeredMoveToPoint = false;
 		
+		const positionHeadVR=vr.frameData.pose.position;
+		
 		for (let gamepad of gamepads){
 			if (gamepad.hand=="right"){
 				speedX=-1*gamepad.axes[0];                                                                  
@@ -242,7 +267,6 @@ export class VRMapControls{
 		//Trigger a TP in the direction of the gamepad
 		
 		if (justTriggeredTP==true){
-			const positionHeadVR=vr.frameData.pose.position;
 			let dirX=positionHeadVR[0]-gamepadPos[0];
 			let dirY=positionHeadVR[1]-gamepadPos[1];
 			let dirZ=positionHeadVR[2]-gamepadPos[2];
@@ -264,39 +288,19 @@ export class VRMapControls{
 		//Instantaneous tp to a point of the pointcloud
 		
 		if (justTriggeredMoveToPoint==true){
-			const positionHeadVR=vr.frameData.pose.position;
-			let dirX=positionHeadVR[0]-gamepadPos[0];
-			let dirY=positionHeadVR[1]-gamepadPos[1];
-			let dirZ=positionHeadVR[2]-gamepadPos[2];
-			const normDir=Math.sqrt(dirX^2+dirY^2+dirZ^2);
-			dirX=dirX/normDir;
-			dirY=dirY/normDir;
-			dirZ=dirZ/normDir;
-			
-			let minDistance=Infinity;
-			let chosenPoint=0;
-			let chosenPC=0;
-			let distToPoint=0;
-			if (gamepadPos.length>0){
+			const newPos=this.getIntersectionPointCloud();	
+			if (newPos !=null){
+				const moveX=positionHeadVR[0]-newPos.x;
+				const moveY=positionHeadVR[1]-newPos.y;
+				const moveZ=positionHeadVR[2]-newPos.z;
 				for (let pointcloud of pointclouds){
-					//const moveSpeed=1/10*this.speed;					
-					for (let point of pointcloud){
-						let distToPoint=distance(point,gamepadPos);
-						if (distToPoint<minDistance){
-							minDistance=distToPoint;
-							chosenPoint=point;
-							chosenPc=pointcloud;
-						}
-					}
-				}
-				for (let poincloud of pointclouds){
-					pointcloud.position.x=chosenPoint.x;
-					pointcloud.position.y=chosenPoint.y;
-					pointcloud.position.z=chosenPoint.z;
-				}
-			}
+					pointcloud.position.x+=moveX;
+					pointcloud.position.y+=moveY;
+					pointcloud.position.z+=moveZ;
+				}				
+			}				
 		}
-		
+				
 		//Do Increase/Decrease moving speed if button Y/X pressed
 		
 		if (triggerX && triggerY){
@@ -322,7 +326,6 @@ export class VRMapControls{
 		//move all the pointcloud
 		
 		const orientationVR=vr.frameData.pose.orientation;
-		const positionHeadVR=vr.frameData.pose.position;
 		let angle=orientationVR[1]*Math.PI;
 		
 		for (let pointcloud of pointclouds){
@@ -362,5 +365,7 @@ export class VRMapControls{
 		}
 
 		this.previousPads = gamepads;
+		
+		
 	}
 };
