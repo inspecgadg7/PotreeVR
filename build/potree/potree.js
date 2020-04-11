@@ -21739,6 +21739,7 @@ ENDSEC
 			this.initToolbar();
 			this.initScene();
 			this.initNavigation();
+			this.initPhotography();
 			this.initFilters();
 			this.initClippingTool();
 			this.initSettings();
@@ -22764,7 +22765,29 @@ ENDSEC
 
 			lblMoveSpeed.html(this.viewer.getMoveSpeed().toFixed(1));
 		}
-
+		
+		initPhotography(){
+			let elPhotography = $('#photography');
+			
+			elPhotography.append(this.createToolIcon(
+				Potree.resourcePath + '/icons/orthophoto.png',
+				'[title]tt.orthophoto',
+				() => {
+					if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
+							this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
+							return;
+					};
+					
+					//this.OrthoPhotoTool()
+					
+					
+				}
+		));
+			
+			
+					
+			elPhotography.append("<br>");			
+		}
 
 		initSettings(){
 
@@ -23828,8 +23851,8 @@ ENDSEC
 			this.initThree();
 			this.prepareVR();
 
-			//this.prepareVR();
-
+			//this.prepareVR();			
+							
 			{
 				let canvas = this.renderer.domElement;
 				canvas.addEventListener("webglcontextlost", (e) => {
@@ -24492,7 +24515,7 @@ ENDSEC
 				pointcloud.material.useOrthographicCamera = mode == CameraMode.ORTHOGRAPHIC;
 			}
 		}
-		
+			
 		loadSettingsFromURL(){
 			if(Utils.getParameterByName("pointSize")){
 				this.setPointSize(parseFloat(Utils.getParameterByName("pointSize")));
@@ -25724,7 +25747,7 @@ ENDSEC
 			}
 
 			return message;
-		}
+		}	
 	};
 
 	class VRControlls{
@@ -26352,11 +26375,7 @@ ENDSEC
 			}
 					
 			const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
-			
-			if (this.a%400==0){
-				//console.log(gamepads);
-			}	
-			
+					
 			const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 			
 			if(this.previousPads.length !== gamepads.length){
@@ -26484,7 +26503,7 @@ ENDSEC
 				speedZ=-1*1/1000*this.speed;
 			}
 			
-			//move all the pointcloud
+			//move all pointclouds
 			
 			const orientationVR=vr.frameData.pose.orientation;
 			let angle=orientationVR[1]*Math.PI;
@@ -26495,20 +26514,7 @@ ENDSEC
 				pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
 				pointcloud.position.z += speedZ;
 				
-				/*
-				if (a%10==0){
-					const radius=Math.sqrt((pointcloud.position.x-positionHeadVR[0])^2+(pointcloud.position.y-positionHeadVR[1])^2);
-					const yawSpeed=1/1000*this.rotationSpeed;
-					const yawDelta=rotationY*Math.PI*yawSpeed;
-					const prevX=pointcloud.position.x+positionHeadVR[0];
-					const prevY=pointcloud.position.y+positionHeadVR[1];
-					if (yawDelta !==0){
-						pointcloud.position.x=prevX*Math.cos(yawDelta)-prevY*Math.sin(yawDelta)-positionHeadVR[0];
-						pointcloud.position.y=prevX*Math.sin(yawDelta)-prevY*Math.cos(yawDelta)-positionHeadVR[1];
-						pointcloud.rotation.z+=yawDelta;
-					}
-				}
-				*/
+				
 			}
 			
 			{ // MOVE CONTROLLER SCENE NODE

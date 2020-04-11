@@ -191,11 +191,7 @@ export class VRMapControls{
 		}
 				
 		const gamepads = Array.from(navigator.getGamepads()).filter(p => p !== null).map(this.copyPad);
-		
-		if (this.a%400==0){
-			//console.log(gamepads);
-		}	
-		
+				
 		const getPad = (list, pattern) => list.find(pad => pad.index === pattern.index);
 		
 		if(this.previousPads.length !== gamepads.length){
@@ -323,7 +319,7 @@ export class VRMapControls{
 			speedZ=-1*1/1000*this.speed;
 		}
 		
-		//move all the pointcloud
+		//move all pointclouds
 		
 		const orientationVR=vr.frameData.pose.orientation;
 		let angle=orientationVR[1]*Math.PI;
@@ -334,20 +330,7 @@ export class VRMapControls{
 			pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
 			pointcloud.position.z += speedZ;
 			
-			/*
-			if (a%10==0){
-				const radius=Math.sqrt((pointcloud.position.x-positionHeadVR[0])^2+(pointcloud.position.y-positionHeadVR[1])^2);
-				const yawSpeed=1/1000*this.rotationSpeed;
-				const yawDelta=rotationY*Math.PI*yawSpeed;
-				const prevX=pointcloud.position.x+positionHeadVR[0];
-				const prevY=pointcloud.position.y+positionHeadVR[1];
-				if (yawDelta !==0){
-					pointcloud.position.x=prevX*Math.cos(yawDelta)-prevY*Math.sin(yawDelta)-positionHeadVR[0];
-					pointcloud.position.y=prevX*Math.sin(yawDelta)-prevY*Math.cos(yawDelta)-positionHeadVR[1];
-					pointcloud.rotation.z+=yawDelta;
-				}
-			}
-			*/
+			
 		}
 		
 		{ // MOVE CONTROLLER SCENE NODE

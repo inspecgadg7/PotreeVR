@@ -2,6 +2,7 @@
 import {MeasuringTool} from "../utils/MeasuringTool.js";
 import {ProfileTool} from "../utils/ProfileTool.js";
 import {VolumeTool} from "../utils/VolumeTool.js";
+//import {OrthoPhotoTool} from "../utils/OrthoPhoto.js";
 
 import {GeoJSONExporter} from "../exporter/GeoJSONExporter.js"
 import {DXFExporter} from "../exporter/DXFExporter.js"
@@ -54,6 +55,7 @@ export class Sidebar{
 		this.initToolbar();
 		this.initScene();
 		this.initNavigation();
+		this.initPhotography();
 		this.initFilters();
 		this.initClippingTool();
 		this.initSettings();
@@ -1079,7 +1081,29 @@ export class Sidebar{
 
 		lblMoveSpeed.html(this.viewer.getMoveSpeed().toFixed(1));
 	}
-
+	
+	initPhotography(){
+		let elPhotography = $('#photography');
+		
+		elPhotography.append(this.createToolIcon(
+			Potree.resourcePath + '/icons/orthophoto.png',
+			'[title]tt.orthophoto',
+			() => {
+				if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
+						this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
+						return;
+				};
+				
+				//this.OrthoPhotoTool()
+				
+				
+			}
+	));
+		
+		
+				
+		elPhotography.append("<br>");			
+	}
 
 	initSettings(){
 

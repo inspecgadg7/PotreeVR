@@ -140,8 +140,8 @@ export class Viewer extends EventDispatcher{
 		this.initThree();
 		this.prepareVR();
 
-		//this.prepareVR();
-
+		//this.prepareVR();			
+						
 		{
 			let canvas = this.renderer.domElement;
 			canvas.addEventListener("webglcontextlost", (e) => {
@@ -804,7 +804,7 @@ export class Viewer extends EventDispatcher{
 			pointcloud.material.useOrthographicCamera = mode == CameraMode.ORTHOGRAPHIC;
 		}
 	}
-	
+		
 	loadSettingsFromURL(){
 		if(Utils.getParameterByName("pointSize")){
 			this.setPointSize(parseFloat(Utils.getParameterByName("pointSize")));
@@ -2036,5 +2036,5 @@ export class Viewer extends EventDispatcher{
 		}
 
 		return message;
-	}
+	}	
 };
