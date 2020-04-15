@@ -8,6 +8,7 @@
     "gulp-concat": "^2.6.1",
     "gulp-connect": "^5.7.0",
     "gulp-util": "^3.0.8",
+    "html2canvas": "^1.0.0-rc.5",
     "through": "~2.3.4"
   },
   "author": "Markus Schütz",

@@ -1,5 +1,5 @@
 
-import {ClipTask, ClipMethod, CameraMode, LengthUnits} from "../defines.js";
+import {ClipTask, ClipMethod, ClipPhoto, PreviewStatus, CameraMode, LengthUnits} from "../defines.js";
 import {Renderer} from "../PotreeRenderer.js";
 import {PotreeRenderer} from "./PotreeRenderer.js";
 import {EDLRenderer} from "./EDLRenderer.js";
@@ -111,7 +111,9 @@ export class Viewer extends EventDispatcher{
 		this.freeze = false;
 		this.clipTask = ClipTask.HIGHLIGHT;
 		this.clipMethod = ClipMethod.INSIDE_ANY;
-
+		this.clipPhoto=ClipPhoto.SCREENBOX;
+		this.previewStatus=PreviewStatus.SETUP;
+		
 		this.filterReturnNumberRange = [0, 7];
 		this.filterNumberOfReturnsRange = [0, 7];
 		this.filterGPSTimeRange = [0, Infinity];
@@ -228,6 +230,8 @@ export class Viewer extends EventDispatcher{
 			this.setEDLRadius(1.4);
 			this.setEDLStrength(0.4);
 			this.setClipTask(ClipTask.HIGHLIGHT);
+			this.setClipPhoto(ClipPhoto.SCREENBOX);
+			this.setPreviewStatus(PreviewStatus.SETUP);
 			this.setClipMethod(ClipMethod.INSIDE_ANY);
 			this.setPointBudget(1*1000*1000);
 			this.setShowBoundingBox(false);
@@ -445,6 +449,14 @@ export class Viewer extends EventDispatcher{
 	getClipMethod(){
 		return this.clipMethod;
 	}
+	
+	getClipPhoto(){
+		return this.clipPhoto;
+	}
+	
+	getPreviewStatus(){
+		return this.previewStatus;
+	}
 
 	setClipTask(value){
 		if(this.clipTask !== value){
@@ -467,7 +479,29 @@ export class Viewer extends EventDispatcher{
 				viewer: this});		
 		}
 	}
-
+	
+	setClipPhoto(value){
+		if(this.clipPhoto !== value){
+			
+			this.clipPhoto=value;
+			
+			this.dispatchEvent({
+				type: "clipmethod_changed", 
+				viewer: this});
+		}
+	}
+	
+	setPreviewStatus(value){
+		if(this.previewStatus !== value){
+			
+			this.previewStatus=value;
+			
+			this.dispatchEvent({
+				type: "clipmethod_changed", 
+				viewer: this});
+		}
+	}
+	
 	setPointBudget (value) {
 		if (Potree.pointBudget !== value) {
 			Potree.pointBudget = parseInt(value);

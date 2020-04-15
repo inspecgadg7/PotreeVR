@@ -2,7 +2,7 @@
 import {MeasuringTool} from "../utils/MeasuringTool.js";
 import {ProfileTool} from "../utils/ProfileTool.js";
 import {VolumeTool} from "../utils/VolumeTool.js";
-//import {OrthoPhotoTool} from "../utils/OrthoPhoto.js";
+import {OrthoPhoto} from "../utils/OrthoPhoto.js";
 
 import {GeoJSONExporter} from "../exporter/GeoJSONExporter.js"
 import {DXFExporter} from "../exporter/DXFExporter.js"
@@ -13,7 +13,7 @@ import {PointCloudTree} from "../PointCloudTree.js"
 import {Profile} from "../utils/Profile.js"
 import {Measure} from "../utils/Measure.js"
 import {Annotation} from "../Annotation.js"
-import {CameraMode, ClipTask, ClipMethod} from "../defines.js"
+import {CameraMode, ClipTask, ClipMethod, ClipPhoto, PreviewStatus} from "../defines.js"
 import {ScreenBoxSelectTool} from "../utils/ScreenBoxSelectTool.js"
 import {Utils} from "../utils.js"
 
@@ -601,11 +601,9 @@ export class Sidebar{
 	initClippingTool(){
 		
 		this.viewer.addEventListener("cliptask_changed", (event) => {
-			console.log("TODO");
 		});
 
 		this.viewer.addEventListener("clipmethod_changed", (event) => {
-			console.log("TODO");
 		});
 
 		{
@@ -666,7 +664,7 @@ export class Sidebar{
 
 		{// SCREEN BOX SELECT
 			let boxSelectTool = new ScreenBoxSelectTool(this.viewer);
-
+			
 			clippingToolBar.append(this.createToolIcon(
 				Potree.resourcePath + "/icons/clip-screen.svg",
 				"[title]tt.screen_clip_box",
@@ -1083,26 +1081,57 @@ export class Sidebar{
 	}
 	
 	initPhotography(){
+		let orthoPhotoTool = new OrthoPhoto(this.viewer);
+			
 		let elPhotography = $('#photography');
-		
-		elPhotography.append(this.createToolIcon(
-			Potree.resourcePath + '/icons/orthophoto.png',
-			'[title]tt.orthophoto',
-			() => {
-				if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
+			elPhotography.append(this.createToolIcon(
+				Potree.resourcePath + "/icons/orthophoto.png",
+				"[title]tt.photography",
+				() => {
+					if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
 						this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
 						return;
-				};
-				
-				//this.OrthoPhotoTool()
-				
-				
-			}
-	));
+					}
+					
+					
+					
+					let createClip=orthoPhotoTool.start();
+					/*
+					let item = orthoPhotoTool.startInsertion();
+					*/
+					/*
+					let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
+					let jsonNode = measurementsRoot.children.find(child => child.data.uuid === item.uuid);
+					$.jstree.reference(jsonNode.id).deselect_all();
+					$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+					*/
+				}
+			));		
+		elPhotography.append("<br>");	
 		
+		{
+			let elClipPhoto = $("#clipphoto_options");
+			elClipPhoto.selectgroup();
+
+			elClipPhoto.find("input").click( (e) => {
+				this.viewer.setClipPhoto(ClipPhoto[e.target.value]);
+			});
+			let currentClipPhoto = Object.keys(ClipPhoto)
+				.filter(key => ClipPhoto[key] === this.viewer.clipPhoto);
+			elClipPhoto.find(`input[value=${currentClipPhoto}]`).trigger("click");
+		}
 		
-				
-		elPhotography.append("<br>");			
+		{	let elPreview = $("#preview_options");
+			elPreview.selectgroup();
+
+			elPreview.find("input").click( (e) => {
+				this.viewer.setPreviewStatus(PreviewStatus[e.target.value]);
+				orthoPhotoTool.actualizeMode();
+			});
+			let currentPreviewStatus = Object.keys(PreviewStatus)
+				.filter(key => PreviewStatus[key] === this.viewer.previewStatus);
+			elPreview.find(`input[value=${currentPreviewStatus}]`).trigger("click");
+		}
 	}
 
 	initSettings(){

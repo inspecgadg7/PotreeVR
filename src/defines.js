@@ -20,6 +20,16 @@ export const ClipMethod = {
 	INSIDE_ALL: 1
 };
 
+export const ClipPhoto = {
+	SCREENBOX: 0,
+	VOLUMEBOX: 1
+};
+
+export const PreviewStatus = {
+	SETUP: 0,
+	PREVIEW: 1
+};
+
 export const MOUSE = {
 	LEFT: 0b0001,
 	RIGHT: 0b0010,

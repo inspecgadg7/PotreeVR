@@ -170,6 +170,8 @@ export class ScreenBoxSelectTool extends EventDispatcher{
 		this.addEventListener("drag", drag);
 		this.addEventListener("drop", drop);
 
+		//this.viewer.inputHandler.startDragging(volume);
+		
 		viewer.inputHandler.addInputListener(this);
 
 		return volume;

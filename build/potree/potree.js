@@ -1816,6 +1816,16 @@
 		INSIDE_ALL: 1
 	};
 
+	const ClipPhoto = {
+		SCREENBOX: 0,
+		VOLUMEBOX: 1
+	};
+
+	const PreviewStatus = {
+		SETUP: 0,
+		PREVIEW: 1
+	};
+
 	const MOUSE = {
 		LEFT: 0b0001,
 		RIGHT: 0b0010,
@@ -13512,7 +13522,9 @@ void main() {
 			measure.closed = args.closed || false;
 			measure.maxMarkers = args.maxMarkers || Infinity;
 			measure.name = args.name || `<span data-i18n="scene.object_measurement">`+i18n.t("scene.object_measurement")+`</span>`;
-
+			
+			//measure.isOrthophoto = args.isOrthophoto || false;
+			
 			this.scene.add(measure);
 
 			let cancel = {
@@ -13523,7 +13535,31 @@ void main() {
 			let insertionCallback = (e) => {
 				if (e.button === THREE.MOUSE.LEFT) {
 					measure.addMarker(measure.points[measure.points.length - 1].position.clone());
-
+					/*
+					//Orthophoto : After placing two points, the third must be perpendicular, and the fourth is created automatically				if (measure
+					if (measure.points.length==4 && measure.isOrthophoto==true){
+						
+						//First, we will calculate the equation of the plane formed by the 3 points
+						let point1=measure.points[0].position;
+						let point2=measure.points[1].position;
+						let point3=measure.points[2].position;
+						console.log(point1);
+						console.log(point2);
+						console.log(point3);
+						let vector12=[point1.x-point2.x,point1.y-point2.y,point1.z-point2.z];
+						let vector32=[point3.x-point2.x,point3.y-point2.y,point3.z-point2.z];
+						
+						let crossProduct=[vector12[1]*vector32[2]-vector12[2]*vector32[1],vector12[0]*vector32[2]-vector12[2]*vector32[0],vector12[0]*vector32[1]-vector12[1]*vector32[0]];
+						console.log(crossProduct);
+						console.log("test");
+						//we need to delete and replace the third marker at a perpendicular position
+						//measure.removeMarker(measure.points.length - 1);
+						
+						
+						
+						measure.addMarker(measure.points[1].position.clone());
+					}
+					*/
 					if (measure.points.length >= measure.maxMarkers) {
 						cancel.callback();
 					}
@@ -14073,6 +14109,8 @@ void main() {
 			this.addEventListener("drag", drag);
 			this.addEventListener("drop", drop);
 
+			//this.viewer.inputHandler.startDragging(volume);
+			
 			viewer.inputHandler.addInputListener(this);
 
 			return volume;
@@ -18560,6 +18598,41 @@ void main() {
 		}
 	};
 
+	class OrthoPhoto{
+		constructor(viewer){
+			
+			this.viewer = viewer;
+			this.item = new BoxVolume();
+		}
+		
+		start(){
+			if (this.viewer.clipPhoto == ClipPhoto.SCREENBOX){
+				let boxSelectTool = new ScreenBoxSelectTool(this.viewer);
+				this.item = boxSelectTool.startInsertion();
+							
+			}
+			else if (this.viewer.clipPhoto == ClipPhoto.VOLUMEBOX){
+				let volumeTool = new VolumeTool(this.viewer);
+				this.item = volumeTool.startInsertion({clip: true});
+			}
+									
+		}
+		actualizeMode(){
+			if (this.viewer.previewStatus == PreviewStatus.SETUP){
+				this.viewer.setClipTask(ClipTask.HIGHLIGHT);
+				this.item.visible = true;
+				
+				
+			}
+					
+			else if (this.viewer.previewStatus == PreviewStatus.PREVIEW){
+				this.viewer.setClipTask(ClipTask.SHOW_INSIDE);
+				this.item.visible = false;
+				
+			}
+		}
+	}
+
 	/**
 	 *
 	 * @author sigeom sa / http://sigeom.ch
@@ -22285,11 +22358,9 @@ ENDSEC
 		initClippingTool(){
 			
 			this.viewer.addEventListener("cliptask_changed", (event) => {
-				console.log("TODO");
 			});
 
 			this.viewer.addEventListener("clipmethod_changed", (event) => {
-				console.log("TODO");
 			});
 
 			{
@@ -22350,7 +22421,7 @@ ENDSEC
 
 			{// SCREEN BOX SELECT
 				let boxSelectTool = new ScreenBoxSelectTool(this.viewer);
-
+				
 				clippingToolBar.append(this.createToolIcon(
 					Potree.resourcePath + "/icons/clip-screen.svg",
 					"[title]tt.screen_clip_box",
@@ -22767,26 +22838,57 @@ ENDSEC
 		}
 		
 		initPhotography(){
+			let orthoPhotoTool = new OrthoPhoto(this.viewer);
+				
 			let elPhotography = $('#photography');
-			
-			elPhotography.append(this.createToolIcon(
-				Potree.resourcePath + '/icons/orthophoto.png',
-				'[title]tt.orthophoto',
-				() => {
-					if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
+				elPhotography.append(this.createToolIcon(
+					Potree.resourcePath + "/icons/orthophoto.png",
+					"[title]tt.photography",
+					() => {
+						if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
 							this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
 							return;
-					};
-					
-					//this.OrthoPhotoTool()
-					
-					
-				}
-		));
+						}
+						
+						
+						
+						let createClip=orthoPhotoTool.start();
+						/*
+						let item = orthoPhotoTool.startInsertion();
+						*/
+						/*
+						let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
+						let jsonNode = measurementsRoot.children.find(child => child.data.uuid === item.uuid);
+						$.jstree.reference(jsonNode.id).deselect_all();
+						$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
+						*/
+					}
+				));		
+			elPhotography.append("<br>");	
 			
+			{
+				let elClipPhoto = $("#clipphoto_options");
+				elClipPhoto.selectgroup();
+
+				elClipPhoto.find("input").click( (e) => {
+					this.viewer.setClipPhoto(ClipPhoto[e.target.value]);
+				});
+				let currentClipPhoto = Object.keys(ClipPhoto)
+					.filter(key => ClipPhoto[key] === this.viewer.clipPhoto);
+				elClipPhoto.find(`input[value=${currentClipPhoto}]`).trigger("click");
+			}
 			
-					
-			elPhotography.append("<br>");			
+			{	let elPreview = $("#preview_options");
+				elPreview.selectgroup();
+
+				elPreview.find("input").click( (e) => {
+					this.viewer.setPreviewStatus(PreviewStatus[e.target.value]);
+					orthoPhotoTool.actualizeMode();
+				});
+				let currentPreviewStatus = Object.keys(PreviewStatus)
+					.filter(key => PreviewStatus[key] === this.viewer.previewStatus);
+				elPreview.find(`input[value=${currentPreviewStatus}]`).trigger("click");
+			}
 		}
 
 		initSettings(){
@@ -23822,7 +23924,9 @@ ENDSEC
 			this.freeze = false;
 			this.clipTask = ClipTask.HIGHLIGHT;
 			this.clipMethod = ClipMethod.INSIDE_ANY;
-
+			this.clipPhoto=ClipPhoto.SCREENBOX;
+			this.previewStatus=PreviewStatus.SETUP;
+			
 			this.filterReturnNumberRange = [0, 7];
 			this.filterNumberOfReturnsRange = [0, 7];
 			this.filterGPSTimeRange = [0, Infinity];
@@ -23939,6 +24043,8 @@ ENDSEC
 				this.setEDLRadius(1.4);
 				this.setEDLStrength(0.4);
 				this.setClipTask(ClipTask.HIGHLIGHT);
+				this.setClipPhoto(ClipPhoto.SCREENBOX);
+				this.setPreviewStatus(PreviewStatus.SETUP);
 				this.setClipMethod(ClipMethod.INSIDE_ANY);
 				this.setPointBudget(1*1000*1000);
 				this.setShowBoundingBox(false);
@@ -24156,6 +24262,14 @@ ENDSEC
 		getClipMethod(){
 			return this.clipMethod;
 		}
+		
+		getClipPhoto(){
+			return this.clipPhoto;
+		}
+		
+		getPreviewStatus(){
+			return this.previewStatus;
+		}
 
 		setClipTask(value){
 			if(this.clipTask !== value){
@@ -24178,7 +24292,29 @@ ENDSEC
 					viewer: this});		
 			}
 		}
-
+		
+		setClipPhoto(value){
+			if(this.clipPhoto !== value){
+				
+				this.clipPhoto=value;
+				
+				this.dispatchEvent({
+					type: "clipmethod_changed", 
+					viewer: this});
+			}
+		}
+		
+		setPreviewStatus(value){
+			if(this.previewStatus !== value){
+				
+				this.previewStatus=value;
+				
+				this.dispatchEvent({
+					type: "clipmethod_changed", 
+					viewer: this});
+			}
+		}
+		
 		setPointBudget (value) {
 			if (Potree.pointBudget !== value) {
 				Potree.pointBudget = parseInt(value);
@@ -26781,6 +26917,7 @@ ENDSEC
 	exports.CameraMode = CameraMode;
 	exports.ClassificationScheme = ClassificationScheme;
 	exports.ClipMethod = ClipMethod;
+	exports.ClipPhoto = ClipPhoto;
 	exports.ClipTask = ClipTask;
 	exports.ClipVolume = ClipVolume;
 	exports.ClippingTool = ClippingTool;
@@ -26835,6 +26972,7 @@ ENDSEC
 	exports.PointSizeType = PointSizeType;
 	exports.Points = Points;
 	exports.PolygonClipVolume = PolygonClipVolume;
+	exports.PreviewStatus = PreviewStatus;
 	exports.Profile = Profile;
 	exports.ProfileData = ProfileData;
 	exports.ProfileRequest = ProfileRequest;

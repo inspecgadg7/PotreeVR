@@ -28,7 +28,8 @@
 	<script src="../libs/jstree/jstree.js"></script>
 	<script src="../build/potree/potree.js"></script>
 	<script src="../libs/plasio/js/laslaz.js"></script>
-	
+	<script src="../libs/html2canvas/dist/html2canvas.min.js"></script>
+		
 	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->	
 	<!-- INCLUDE SETTINGS HERE -->
 	
@@ -37,12 +38,25 @@
 			<input type="button" id="take_picture" value="Take orthophoto" 
 				style="position: absolute; bottom: 20px; left: 45%; width: 20%; height: 30px; z-index: 10000"/>
 		<div id="potree_sidebar_container"> </div>
+		
+		<div id="capture" style="padding: 10px; background: #f5da55">
+		<h4 style="color: #000; ">Hello world!</h4>
+		</div>
 	</div>
 	
 	<script>
-	
 		$("#take_picture").click( () => {
-			
+			console.log("test");
+			//html2canvas(document.querySelector("#capture")).then(canvas => {
+			//document.body.appendChild(canvas)
+			viewer.setDescription(``);
+						
+			html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
+				var base64image = canvas.toDataURL("image/png");
+
+				// Open the image in a new window
+				window.open(base64image , "_blank");
+			});
 		});
 		
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
