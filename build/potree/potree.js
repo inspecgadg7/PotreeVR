@@ -14689,7 +14689,7 @@ void main() {
 			let drag = e.drag;
 			let handle = this.activeHandle;
 			let camera = this.viewer.scene.getActiveCamera();
-
+			
 			if(!handle){
 				return
 			};
@@ -18620,15 +18620,37 @@ void main() {
 		actualizeMode(){
 			if (this.viewer.previewStatus == PreviewStatus.SETUP){
 				this.viewer.setClipTask(ClipTask.HIGHLIGHT);
-				this.item.visible = true;
-				
+				this.item.visible = true;			
 				
 			}
 					
 			else if (this.viewer.previewStatus == PreviewStatus.PREVIEW){
-				this.viewer.setClipTask(ClipTask.SHOW_INSIDE);
+				//this.viewer.setClipTask(ClipTask.SHOW_INSIDE);
 				this.item.visible = false;
 				
+				/*
+							
+				let maxScale = Math.max(...this.item.scale.toArray());
+				let minScale = Math.min(...this.item.scale.toArray());
+				let handleLength = Math.abs(this.item.scale.dot(new THREE.Vector3(0,0,1)));
+				let alignment = new THREE.Vector3(0,0,1).multiplyScalar(2 * maxScale / handleLength);
+				alignment.applyMatrix4(this.item.matrixWorld);
+				let newCamPos = alignment;
+				let newCamTarget = this.item.getWorldPosition(new THREE.Vector3());
+
+				Utils.moveTo(this.viewer.scene, newCamPos, newCamTarget);
+				
+				*/	
+				
+				let maxScale = Math.max(...this.item.scale.toArray());
+				let minScale = Math.min(...this.item.scale.toArray());
+				let handleLength = Math.abs(this.item.scale.dot(new THREE.Vector3(0,0,1)));
+				let alignment = new THREE.Vector3(0,0,1).multiplyScalar(2*minScale / handleLength);
+				alignment.applyMatrix4(this.item.matrixWorld);
+				let newCamPos = alignment;
+				let newCamTarget = this.item.getWorldPosition(new THREE.Vector3());
+
+				Utils.moveTo(this.viewer.scene, newCamPos, newCamTarget);
 			}
 		}
 	}
@@ -23955,8 +23977,6 @@ ENDSEC
 			this.initThree();
 			this.prepareVR();
 
-			//this.prepareVR();			
-							
 			{
 				let canvas = this.renderer.domElement;
 				canvas.addEventListener("webglcontextlost", (e) => {

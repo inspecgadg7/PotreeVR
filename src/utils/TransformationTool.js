@@ -438,7 +438,7 @@ export class TransformationTool {
 		let drag = e.drag;
 		let handle = this.activeHandle;
 		let camera = this.viewer.scene.getActiveCamera();
-
+		
 		if(!handle){
 			return
 		};

@@ -142,8 +142,6 @@ export class Viewer extends EventDispatcher{
 		this.initThree();
 		this.prepareVR();
 
-		//this.prepareVR();			
-						
 		{
 			let canvas = this.renderer.domElement;
 			canvas.addEventListener("webglcontextlost", (e) => {
