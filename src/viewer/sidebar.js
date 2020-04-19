@@ -20,7 +20,6 @@ import {Utils} from "../utils.js"
 import {EarthControls} from "../navigation/EarthControls.js"
 import {FirstPersonControls} from "../navigation/FirstPersonControls.js"
 import {OrbitControls} from "../navigation/OrbitControls.js"
-import {TPControls} from "../navigation/TPControls.js"
 
 import {ZoomableSlider} from "./ZoomableSlider.js"
 
@@ -987,13 +986,7 @@ export class Sidebar{
 			() => { this.viewer.setNavigationMode(OrbitControls); }
 		));
 		
-		elNavigation.append(this.createToolIcon(
-			Potree.resourcePath + '/icons/tp_controls.svg',
-			'[title]tt.tp_control',
-			() => { this.viewer.setNavigationMode(TPControls); }
-		));
 		
-
 		elNavigation.append(this.createToolIcon(
 			Potree.resourcePath + '/icons/focus.svg',
 			'[title]tt.focus_control',

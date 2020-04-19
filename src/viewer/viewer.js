@@ -18,7 +18,6 @@ import {Sidebar} from "./sidebar.js";
 import {InputHandler} from "../navigation/InputHandler.js";
 import {NavigationCube} from "./NavigationCube.js";
 import {OrbitControls} from "../navigation/OrbitControls.js";
-import {TPControls} from "../navigation/TPControls.js";
 import {FirstPersonControls} from "../navigation/FirstPersonControls.js";
 import {EarthControls} from "../navigation/EarthControls.js";
 import {DeviceOrientationControls} from "../navigation/DeviceOrientationControls.js";
@@ -358,8 +357,6 @@ export class Viewer extends EventDispatcher{
 			return this.earthControls;
 		} else if (navigationMode === DeviceOrientationControls) {
 			return this.deviceControls;
-		}else if (navigationMode === TPControls) {
-			return this.tpControls;
 		} else {
 			return null;
 		}
@@ -1000,13 +997,7 @@ export class Viewer extends EventDispatcher{
 			this.deviceControls.addEventListener('start', this.disableAnnotations.bind(this));
 			this.deviceControls.addEventListener('end', this.enableAnnotations.bind(this));
 		}
-		{ // create TP CONTROLS
-			this.tpControls = new TPControls(this);
-			this.tpControls.enabled = false;
-			this.tpControls.addEventListener('start', this.disableAnnotations.bind(this));
-			this.tpControls.addEventListener('end', this.enableAnnotations.bind(this));
-		}
-		
+				
 	};
 
 	toggleSidebar () {
