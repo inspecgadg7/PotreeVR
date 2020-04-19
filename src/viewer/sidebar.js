@@ -13,7 +13,7 @@ import {PointCloudTree} from "../PointCloudTree.js"
 import {Profile} from "../utils/Profile.js"
 import {Measure} from "../utils/Measure.js"
 import {Annotation} from "../Annotation.js"
-import {CameraMode, ClipTask, ClipMethod, ClipPhoto, PreviewStatus} from "../defines.js"
+import {CameraMode, ClipTask, ClipMethod, ClipPhoto, PreviewStatus, ScreenTransfer} from "../defines.js"
 import {ScreenBoxSelectTool} from "../utils/ScreenBoxSelectTool.js"
 import {Utils} from "../utils.js"
 
@@ -1081,6 +1081,7 @@ export class Sidebar{
 	}
 	
 	initPhotography(){
+		//Create an orthophoto tool
 		let orthoPhotoTool = new OrthoPhoto(this.viewer);
 			
 		let elPhotography = $('#photography');
@@ -1088,27 +1089,19 @@ export class Sidebar{
 				Potree.resourcePath + "/icons/orthophoto.png",
 				"[title]tt.photography",
 				() => {
+					//Requires to use an Orthographic Camera
 					if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
 						this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
 						return;
 					}
+					//Create a Volume Box
+					let createClip=orthoPhotoTool.createBoxVolume();
 					
-					
-					
-					let createClip=orthoPhotoTool.start();
-					/*
-					let item = orthoPhotoTool.startInsertion();
-					*/
-					/*
-					let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
-					let jsonNode = measurementsRoot.children.find(child => child.data.uuid === item.uuid);
-					$.jstree.reference(jsonNode.id).deselect_all();
-					$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
-					*/
 				}
 			));		
 		elPhotography.append("<br>");	
 		
+		//Selection of the Clip Mode
 		{
 			let elClipPhoto = $("#clipphoto_options");
 			elClipPhoto.selectgroup();
@@ -1121,6 +1114,7 @@ export class Sidebar{
 			elClipPhoto.find(`input[value=${currentClipPhoto}]`).trigger("click");
 		}
 		
+		//Selection of the Setup/Preview Mode
 		{	let elPreview = $("#preview_options");
 			elPreview.selectgroup();
 
@@ -1131,6 +1125,18 @@ export class Sidebar{
 			let currentPreviewStatus = Object.keys(PreviewStatus)
 				.filter(key => PreviewStatus[key] === this.viewer.previewStatus);
 			elPreview.find(`input[value=${currentPreviewStatus}]`).trigger("click");
+		}
+		
+		//Selection of the Download option
+		{	let elScreenTransfer = $("#screen_options");
+			elScreenTransfer.selectgroup();
+
+			elScreenTransfer.find("input").click( (e) => {
+				this.viewer.setScreenTransfer(ScreenTransfer[e.target.value]);				
+			});
+			let currentScreenTransfer = Object.keys(ScreenTransfer)
+				.filter(key => ScreenTransfer[key] === this.viewer.screenTransfer);
+			elScreenTransfer.find(`input[value=${currentScreenTransfer}]`).trigger("click");
 		}
 	}
 

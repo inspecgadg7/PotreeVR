@@ -29,13 +29,14 @@
 	<script src="../build/potree/potree.js"></script>
 	<script src="../libs/plasio/js/laslaz.js"></script>
 	<script src="../libs/html2canvas/dist/html2canvas.min.js"></script>
+	<script src="../libs/file-saver/FileSaver.min.js"></script> 
 		
 	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->	
 	<!-- INCLUDE SETTINGS HERE -->
 	
 	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
 		<div id="potree_render_area"></div>
-			<input type="button" id="take_picture" value="Take orthophoto" 
+			<input type="button" id="take_picture" value="Take Photography" 
 				style="position: absolute; bottom: 20px; left: 45%; width: 20%; height: 30px; z-index: 10000"/>
 		<div id="potree_sidebar_container"> </div>
 		
@@ -45,18 +46,11 @@
 	</div>
 	
 	<script>
+		var description=
+		
 		$("#take_picture").click( () => {
-			console.log("test");
-			//html2canvas(document.querySelector("#capture")).then(canvas => {
-			//document.body.appendChild(canvas)
-			viewer.setDescription(``);
-						
-			html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
-				var base64image = canvas.toDataURL("image/png");
-
-				// Open the image in a new window
-				window.open(base64image , "_blank");
-			});
+			viewer.capturePhotography();
+			
 		});
 		
 		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
@@ -67,10 +61,12 @@
 		viewer.loadSettingsFromURL();
 		
 		viewer.setDescription(`
-		Click on the orthophoto icon in the tool section of the sidebar. 
-		
-		Select the surface of interest by placing three points on the map.
-		A clipping box is created and you can modify his dimensions and orientation by touching it. 
+		Move to Orthographic camera in Tools>Navigation.<br>
+		Select a Clip Mode in Tools>Photography.<br>
+		Click on the photography icon.<br>
+		A clipping box is created and you can modify his dimensions and orientation by touching it.<br>
+		Alternate between Setup and Preview Mode.<br>
+		Select a Download option.<br>
 		When ready, press the button to take an HD orthophoto`);
 		
 		viewer.loadGUI(() => {

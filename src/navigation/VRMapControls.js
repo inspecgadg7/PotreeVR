@@ -15,7 +15,6 @@ export class VRMapControls{
 		this.viewer.scene.scene.add(this.snLeft.node);
 		this.viewer.scene.scene.add(this.snRight.node);	
 		
-		this.a=0;
 		this.speed=20;
 		this.rotationSpeed=20;
 		this.prevTriggerTP=false;
@@ -173,7 +172,6 @@ export class VRMapControls{
 	}
 
 	update(){
-		this.a++;
 		const {viewer, snLeft, snRight} = this;
 		
 		const pointclouds = viewer.scene.pointclouds;
@@ -204,10 +202,7 @@ export class VRMapControls{
 		const toScene = (position) => {
 			return new THREE.Vector3(position.x, -position.z, position.y);
 		};
-		if (this.a%400==0){
-			
-		}
-		
+				
 		//MOVE THE VIEW
 		
 		let speedX = 0;
@@ -320,8 +315,8 @@ export class VRMapControls{
 		}
 		
 		//move all pointclouds
-		
-		const orientationVR=vr.frameData.pose.orientation;
+				
+		const orientationVR=vr.frameData.pose.orientation;		
 		let angle=orientationVR[1]*Math.PI;
 		
 		for (let pointcloud of pointclouds){
@@ -329,8 +324,6 @@ export class VRMapControls{
 			pointcloud.position.x += moveSpeed*speedX*Math.cos(angle)-1*moveSpeed*speedY*Math.sin(angle); 
 			pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
 			pointcloud.position.z += speedZ;
-			
-			
 		}
 		
 		{ // MOVE CONTROLLER SCENE NODE

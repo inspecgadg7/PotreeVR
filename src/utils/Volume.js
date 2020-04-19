@@ -9,10 +9,6 @@ export class Volume extends THREE.Object3D {
 			console.warn("Can't create object of class Volume directly. Use classes BoxVolume or SphereVolume instead.");
 		}
 
-		//console.log(this);
-		//console.log(this.constructor);
-		//console.log(this.constructor.name);
-
 		this._clip = args.clip || false;
 		this._visible = true;
 		this.showVolumeLabel = true;

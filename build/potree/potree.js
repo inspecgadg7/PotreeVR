@@ -508,10 +508,6 @@
 				console.warn("Can't create object of class Volume directly. Use classes BoxVolume or SphereVolume instead.");
 			}
 
-			//console.log(this);
-			//console.log(this.constructor);
-			//console.log(this.constructor.name);
-
 			this._clip = args.clip || false;
 			this._visible = true;
 			this.showVolumeLabel = true;
@@ -1824,6 +1820,10 @@
 	const PreviewStatus = {
 		SETUP: 0,
 		PREVIEW: 1
+	};
+	const ScreenTransfer = {
+		PNG: 0,
+		POPUP: 1
 	};
 
 	const MOUSE = {
@@ -13523,8 +13523,6 @@ void main() {
 			measure.maxMarkers = args.maxMarkers || Infinity;
 			measure.name = args.name || `<span data-i18n="scene.object_measurement">`+i18n.t("scene.object_measurement")+`</span>`;
 			
-			//measure.isOrthophoto = args.isOrthophoto || false;
-			
 			this.scene.add(measure);
 
 			let cancel = {
@@ -13535,31 +13533,6 @@ void main() {
 			let insertionCallback = (e) => {
 				if (e.button === THREE.MOUSE.LEFT) {
 					measure.addMarker(measure.points[measure.points.length - 1].position.clone());
-					/*
-					//Orthophoto : After placing two points, the third must be perpendicular, and the fourth is created automatically				if (measure
-					if (measure.points.length==4 && measure.isOrthophoto==true){
-						
-						//First, we will calculate the equation of the plane formed by the 3 points
-						let point1=measure.points[0].position;
-						let point2=measure.points[1].position;
-						let point3=measure.points[2].position;
-						console.log(point1);
-						console.log(point2);
-						console.log(point3);
-						let vector12=[point1.x-point2.x,point1.y-point2.y,point1.z-point2.z];
-						let vector32=[point3.x-point2.x,point3.y-point2.y,point3.z-point2.z];
-						
-						let crossProduct=[vector12[1]*vector32[2]-vector12[2]*vector32[1],vector12[0]*vector32[2]-vector12[2]*vector32[0],vector12[0]*vector32[1]-vector12[1]*vector32[0]];
-						console.log(crossProduct);
-						console.log("test");
-						//we need to delete and replace the third marker at a perpendicular position
-						//measure.removeMarker(measure.points.length - 1);
-						
-						
-						
-						measure.addMarker(measure.points[1].position.clone());
-					}
-					*/
 					if (measure.points.length >= measure.maxMarkers) {
 						cancel.callback();
 					}
@@ -18603,44 +18576,53 @@ void main() {
 			
 			this.viewer = viewer;
 			this.item = new BoxVolume();
+			this.numClip = 0;
 		}
 		
-		start(){
+		//Called each time photography icon clicked
+		
+		createBoxVolume(){
+			//If there was already a volume, remove it
+			if (this.numClip==1){
+				this.viewer.scene.removeAllClipVolumes();
+			}
+			
+			//Creates a ScreenboxSelectTool if selected
 			if (this.viewer.clipPhoto == ClipPhoto.SCREENBOX){
 				let boxSelectTool = new ScreenBoxSelectTool(this.viewer);
 				this.item = boxSelectTool.startInsertion();
 							
 			}
+			//Creates a VolumeTool if selected
 			else if (this.viewer.clipPhoto == ClipPhoto.VOLUMEBOX){
 				let volumeTool = new VolumeTool(this.viewer);
 				this.item = volumeTool.startInsertion({clip: true});
 			}
-									
+			this.numClip = 1;
+								
 		}
+		
+		//Triggered each time SETUP/PREVIEW clicked
+		
 		actualizeMode(){
+			
+			//Case SETUP 
+			
 			if (this.viewer.previewStatus == PreviewStatus.SETUP){
+				//HIGHLIGHT selected zone
 				this.viewer.setClipTask(ClipTask.HIGHLIGHT);
+				//borders are visible and can be selected to adjust size
 				this.item.visible = true;			
 				
 			}
-					
+			
+			//Case PREVIEW	
+			
 			else if (this.viewer.previewStatus == PreviewStatus.PREVIEW){
-				//this.viewer.setClipTask(ClipTask.SHOW_INSIDE);
+				//Only SHOW_INSIDE selected zone
+				this.viewer.setClipTask(ClipTask.SHOW_INSIDE);
+				//borders not visible
 				this.item.visible = false;
-				
-				/*
-							
-				let maxScale = Math.max(...this.item.scale.toArray());
-				let minScale = Math.min(...this.item.scale.toArray());
-				let handleLength = Math.abs(this.item.scale.dot(new THREE.Vector3(0,0,1)));
-				let alignment = new THREE.Vector3(0,0,1).multiplyScalar(2 * maxScale / handleLength);
-				alignment.applyMatrix4(this.item.matrixWorld);
-				let newCamPos = alignment;
-				let newCamTarget = this.item.getWorldPosition(new THREE.Vector3());
-
-				Utils.moveTo(this.viewer.scene, newCamPos, newCamTarget);
-				
-				*/	
 				
 				let maxScale = Math.max(...this.item.scale.toArray());
 				let minScale = Math.min(...this.item.scale.toArray());
@@ -18649,7 +18631,8 @@ void main() {
 				alignment.applyMatrix4(this.item.matrixWorld);
 				let newCamPos = alignment;
 				let newCamTarget = this.item.getWorldPosition(new THREE.Vector3());
-
+				
+				//Camera is moved to the top of the clipping box
 				Utils.moveTo(this.viewer.scene, newCamPos, newCamTarget);
 			}
 		}
@@ -22860,6 +22843,7 @@ ENDSEC
 		}
 		
 		initPhotography(){
+			//Create an orthophoto tool
 			let orthoPhotoTool = new OrthoPhoto(this.viewer);
 				
 			let elPhotography = $('#photography');
@@ -22867,27 +22851,19 @@ ENDSEC
 					Potree.resourcePath + "/icons/orthophoto.png",
 					"[title]tt.photography",
 					() => {
+						//Requires to use an Orthographic Camera
 						if(!(this.viewer.scene.getActiveCamera() instanceof THREE.OrthographicCamera)){
 							this.viewer.postMessage(`<span data-i18n=\"tt.screen_clip_msg">`+i18n.t("tt.screen_clip_msg")+`</span>`, {duration: 2000});
 							return;
 						}
+						//Create a Volume Box
+						let createClip=orthoPhotoTool.createBoxVolume();
 						
-						
-						
-						let createClip=orthoPhotoTool.start();
-						/*
-						let item = orthoPhotoTool.startInsertion();
-						*/
-						/*
-						let measurementsRoot = $("#jstree_scene").jstree().get_json("measurements");
-						let jsonNode = measurementsRoot.children.find(child => child.data.uuid === item.uuid);
-						$.jstree.reference(jsonNode.id).deselect_all();
-						$.jstree.reference(jsonNode.id).select_node(jsonNode.id);
-						*/
 					}
 				));		
 			elPhotography.append("<br>");	
 			
+			//Selection of the Clip Mode
 			{
 				let elClipPhoto = $("#clipphoto_options");
 				elClipPhoto.selectgroup();
@@ -22900,6 +22876,7 @@ ENDSEC
 				elClipPhoto.find(`input[value=${currentClipPhoto}]`).trigger("click");
 			}
 			
+			//Selection of the Setup/Preview Mode
 			{	let elPreview = $("#preview_options");
 				elPreview.selectgroup();
 
@@ -22910,6 +22887,18 @@ ENDSEC
 				let currentPreviewStatus = Object.keys(PreviewStatus)
 					.filter(key => PreviewStatus[key] === this.viewer.previewStatus);
 				elPreview.find(`input[value=${currentPreviewStatus}]`).trigger("click");
+			}
+			
+			//Selection of the Download option
+			{	let elScreenTransfer = $("#screen_options");
+				elScreenTransfer.selectgroup();
+
+				elScreenTransfer.find("input").click( (e) => {
+					this.viewer.setScreenTransfer(ScreenTransfer[e.target.value]);				
+				});
+				let currentScreenTransfer = Object.keys(ScreenTransfer)
+					.filter(key => ScreenTransfer[key] === this.viewer.screenTransfer);
+				elScreenTransfer.find(`input[value=${currentScreenTransfer}]`).trigger("click");
 			}
 		}
 
@@ -23946,8 +23935,9 @@ ENDSEC
 			this.freeze = false;
 			this.clipTask = ClipTask.HIGHLIGHT;
 			this.clipMethod = ClipMethod.INSIDE_ANY;
-			this.clipPhoto=ClipPhoto.SCREENBOX;
-			this.previewStatus=PreviewStatus.SETUP;
+			this.clipPhoto = ClipPhoto.SCREENBOX;
+			this.previewStatus = PreviewStatus.SETUP;
+			this.screenTransfer = ScreenTransfer.PNG;
 			
 			this.filterReturnNumberRange = [0, 7];
 			this.filterNumberOfReturnsRange = [0, 7];
@@ -24065,6 +24055,7 @@ ENDSEC
 				this.setClipTask(ClipTask.HIGHLIGHT);
 				this.setClipPhoto(ClipPhoto.SCREENBOX);
 				this.setPreviewStatus(PreviewStatus.SETUP);
+				this.setScreenTransfer(ScreenTransfer.PNG);
 				this.setClipMethod(ClipMethod.INSIDE_ANY);
 				this.setPointBudget(1*1000*1000);
 				this.setShowBoundingBox(false);
@@ -24230,6 +24221,10 @@ ENDSEC
 			$('#potree_description')[0].innerHTML = value;
 		};
 
+		getDescription(){
+			return $('#potree_description')[0].innerHTML;
+		}
+			
 		setNavigationMode (value) {
 			this.scene.view.navigationMode = value;
 		};
@@ -24290,6 +24285,10 @@ ENDSEC
 		getPreviewStatus(){
 			return this.previewStatus;
 		}
+		
+		getScreenTransfer(){
+			return this.screenTransfer;
+		}
 
 		setClipTask(value){
 			if(this.clipTask !== value){
@@ -24319,7 +24318,7 @@ ENDSEC
 				this.clipPhoto=value;
 				
 				this.dispatchEvent({
-					type: "clipmethod_changed", 
+					type: "clipphoto_changed", 
 					viewer: this});
 			}
 		}
@@ -24330,7 +24329,18 @@ ENDSEC
 				this.previewStatus=value;
 				
 				this.dispatchEvent({
-					type: "clipmethod_changed", 
+					type: "previewstatus_changed", 
+					viewer: this});
+			}
+		}
+		
+		setScreenTransfer(value){
+			if(this.screenTransfer !== value){
+				
+				this.screenTransfer=value;
+				
+				this.dispatchEvent({
+					type: "screentransfer_changed", 
 					viewer: this});
 			}
 		}
@@ -25904,6 +25914,29 @@ ENDSEC
 
 			return message;
 		}	
+		
+		//capture a screenshot of html element "potree_render_area", launch a download or pop up in new window
+		
+		capturePhotography(){
+			var description=this.getDescription();
+			this.setDescription(``);
+			
+			if (this.screenTransfer==ScreenTransfer.PNG){			
+				html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
+					canvas.toBlob(function(blob) {
+					window.saveAs(blob, "screenshot.png");
+					});
+				});
+			}else if(this.screenTransfer==ScreenTransfer.POPUP){
+				html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
+					var base64image = canvas.toDataURL("image/png");
+					window.open(base64image , "_blank");
+				});
+			}
+			this.setDescription(description);
+		}
+		
+		
 	};
 
 	class VRControlls{
@@ -26355,7 +26388,6 @@ ENDSEC
 			this.viewer.scene.scene.add(this.snLeft.node);
 			this.viewer.scene.scene.add(this.snRight.node);	
 			
-			this.a=0;
 			this.speed=20;
 			this.rotationSpeed=20;
 			this.prevTriggerTP=false;
@@ -26513,7 +26545,6 @@ ENDSEC
 		}
 
 		update(){
-			this.a++;
 			const {viewer, snLeft, snRight} = this;
 			
 			const pointclouds = viewer.scene.pointclouds;
@@ -26544,10 +26575,7 @@ ENDSEC
 			const toScene = (position) => {
 				return new THREE.Vector3(position.x, -position.z, position.y);
 			};
-			if (this.a%400==0){
-				
-			}
-			
+					
 			//MOVE THE VIEW
 			
 			let speedX = 0;
@@ -26660,8 +26688,8 @@ ENDSEC
 			}
 			
 			//move all pointclouds
-			
-			const orientationVR=vr.frameData.pose.orientation;
+					
+			const orientationVR=vr.frameData.pose.orientation;		
 			let angle=orientationVR[1]*Math.PI;
 			
 			for (let pointcloud of pointclouds){
@@ -26669,8 +26697,6 @@ ENDSEC
 				pointcloud.position.x += moveSpeed*speedX*Math.cos(angle)-1*moveSpeed*speedY*Math.sin(angle); 
 				pointcloud.position.y += moveSpeed*speedX*Math.sin(angle)+moveSpeed*speedY*Math.cos(angle); 
 				pointcloud.position.z += speedZ;
-				
-				
 			}
 			
 			{ // MOVE CONTROLLER SCENE NODE
@@ -27000,6 +27026,7 @@ ENDSEC
 	exports.Renderer = Renderer;
 	exports.Scene = Scene;
 	exports.ScreenBoxSelectTool = ScreenBoxSelectTool;
+	exports.ScreenTransfer = ScreenTransfer;
 	exports.SphereVolume = SphereVolume;
 	exports.SpotLightHelper = SpotLightHelper;
 	exports.TPControls = TPControls;

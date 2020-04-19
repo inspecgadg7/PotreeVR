@@ -1,5 +1,5 @@
 
-import {ClipTask, ClipMethod, ClipPhoto, PreviewStatus, CameraMode, LengthUnits} from "../defines.js";
+import {ClipTask, ClipMethod, ClipPhoto, PreviewStatus, ScreenTransfer, CameraMode, LengthUnits} from "../defines.js";
 import {Renderer} from "../PotreeRenderer.js";
 import {PotreeRenderer} from "./PotreeRenderer.js";
 import {EDLRenderer} from "./EDLRenderer.js";
@@ -111,8 +111,9 @@ export class Viewer extends EventDispatcher{
 		this.freeze = false;
 		this.clipTask = ClipTask.HIGHLIGHT;
 		this.clipMethod = ClipMethod.INSIDE_ANY;
-		this.clipPhoto=ClipPhoto.SCREENBOX;
-		this.previewStatus=PreviewStatus.SETUP;
+		this.clipPhoto = ClipPhoto.SCREENBOX;
+		this.previewStatus = PreviewStatus.SETUP;
+		this.screenTransfer = ScreenTransfer.PNG;
 		
 		this.filterReturnNumberRange = [0, 7];
 		this.filterNumberOfReturnsRange = [0, 7];
@@ -230,6 +231,7 @@ export class Viewer extends EventDispatcher{
 			this.setClipTask(ClipTask.HIGHLIGHT);
 			this.setClipPhoto(ClipPhoto.SCREENBOX);
 			this.setPreviewStatus(PreviewStatus.SETUP);
+			this.setScreenTransfer(ScreenTransfer.PNG);
 			this.setClipMethod(ClipMethod.INSIDE_ANY);
 			this.setPointBudget(1*1000*1000);
 			this.setShowBoundingBox(false);
@@ -395,6 +397,10 @@ export class Viewer extends EventDispatcher{
 		$('#potree_description')[0].innerHTML = value;
 	};
 
+	getDescription(){
+		return $('#potree_description')[0].innerHTML;
+	}
+		
 	setNavigationMode (value) {
 		this.scene.view.navigationMode = value;
 	};
@@ -455,6 +461,10 @@ export class Viewer extends EventDispatcher{
 	getPreviewStatus(){
 		return this.previewStatus;
 	}
+	
+	getScreenTransfer(){
+		return this.screenTransfer;
+	}
 
 	setClipTask(value){
 		if(this.clipTask !== value){
@@ -484,7 +494,7 @@ export class Viewer extends EventDispatcher{
 			this.clipPhoto=value;
 			
 			this.dispatchEvent({
-				type: "clipmethod_changed", 
+				type: "clipphoto_changed", 
 				viewer: this});
 		}
 	}
@@ -495,7 +505,18 @@ export class Viewer extends EventDispatcher{
 			this.previewStatus=value;
 			
 			this.dispatchEvent({
-				type: "clipmethod_changed", 
+				type: "previewstatus_changed", 
+				viewer: this});
+		}
+	}
+	
+	setScreenTransfer(value){
+		if(this.screenTransfer !== value){
+			
+			this.screenTransfer=value;
+			
+			this.dispatchEvent({
+				type: "screentransfer_changed", 
 				viewer: this});
 		}
 	}
@@ -2069,4 +2090,27 @@ export class Viewer extends EventDispatcher{
 
 		return message;
 	}	
+	
+	//capture a screenshot of html element "potree_render_area", launch a download or pop up in new window
+	
+	capturePhotography(){
+		var description=this.getDescription();
+		this.setDescription(``);
+		
+		if (this.screenTransfer==ScreenTransfer.PNG){			
+			html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
+				canvas.toBlob(function(blob) {
+				window.saveAs(blob, "screenshot.png");
+				});
+			});
+		}else if(this.screenTransfer==ScreenTransfer.POPUP){
+			html2canvas(document.getElementById("potree_render_area")).then(function(canvas) {
+				var base64image = canvas.toDataURL("image/png");
+				window.open(base64image , "_blank");
+			});
+		}
+		this.setDescription(description);
+	}
+	
+	
 };

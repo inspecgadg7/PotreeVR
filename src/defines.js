@@ -29,6 +29,10 @@ export const PreviewStatus = {
 	SETUP: 0,
 	PREVIEW: 1
 };
+export const ScreenTransfer = {
+	PNG: 0,
+	POPUP: 1
+};
 
 export const MOUSE = {
 	LEFT: 0b0001,

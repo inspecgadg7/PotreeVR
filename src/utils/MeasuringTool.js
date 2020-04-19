@@ -68,8 +68,6 @@ export class MeasuringTool extends EventDispatcher{
 		measure.maxMarkers = args.maxMarkers || Infinity;
 		measure.name = args.name || `<span data-i18n="scene.object_measurement">`+i18n.t("scene.object_measurement")+`</span>`;
 		
-		//measure.isOrthophoto = args.isOrthophoto || false;
-		
 		this.scene.add(measure);
 
 		let cancel = {
@@ -80,31 +78,6 @@ export class MeasuringTool extends EventDispatcher{
 		let insertionCallback = (e) => {
 			if (e.button === THREE.MOUSE.LEFT) {
 				measure.addMarker(measure.points[measure.points.length - 1].position.clone());
-				/*
-				//Orthophoto : After placing two points, the third must be perpendicular, and the fourth is created automatically				if (measure
-				if (measure.points.length==4 && measure.isOrthophoto==true){
-					
-					//First, we will calculate the equation of the plane formed by the 3 points
-					let point1=measure.points[0].position;
-					let point2=measure.points[1].position;
-					let point3=measure.points[2].position;
-					console.log(point1);
-					console.log(point2);
-					console.log(point3);
-					let vector12=[point1.x-point2.x,point1.y-point2.y,point1.z-point2.z];
-					let vector32=[point3.x-point2.x,point3.y-point2.y,point3.z-point2.z];
-					
-					let crossProduct=[vector12[1]*vector32[2]-vector12[2]*vector32[1],vector12[0]*vector32[2]-vector12[2]*vector32[0],vector12[0]*vector32[1]-vector12[1]*vector32[0]];
-					console.log(crossProduct);
-					console.log("test");
-					//we need to delete and replace the third marker at a perpendicular position
-					//measure.removeMarker(measure.points.length - 1);
-					
-					
-					
-					measure.addMarker(measure.points[1].position.clone());
-				}
-				*/
 				if (measure.points.length >= measure.maxMarkers) {
 					cancel.callback();
 				}
